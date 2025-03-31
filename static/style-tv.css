@@ -1,0 +1,133 @@
+/* Full black background for TV display (no borders, full 4K resolution) */
+body, html {
+    background-color: black;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Prevents any unwanted scrolling */
+}
+
+/* Large full-screen content box */
+.content-box {
+    width: 100vw; /* 100% of viewport width */
+    height: 100vh; /* 100% of viewport height */
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px; /* Add padding to ensure content doesn't touch the edges */
+    box-sizing: border-box; /* Ensure padding is included in the width and height */
+    overflow: hidden;
+}
+
+/* Text inside the content box */
+.content-box p {
+    color: white;
+    margin: 0;
+    max-width: 100%; /* Prevents text from going too wide */
+    word-wrap: break-word; /* Wraps long text */
+    text-align: inherit; /* Inherit alignment from parent */
+    width: 100%; /* Ensure it takes the full width of the content box */
+}
+
+/* Formatted text */
+.formatted-text {
+    text-align: inherit; /* Inherit alignment from parent */
+    color: white;
+    max-width: 100%; /* Prevents text from going too wide */
+    word-wrap: break-word; /* Wraps long text */
+    white-space: pre-wrap; /* Preserve spaces and newlines */
+    width: 100%; /* Ensure it takes the full width of the content box */
+}
+
+/* Ensure bold text is displayed correctly */
+.formatted-text strong {
+    font-weight: bold;
+    color: inherit; /* Inherits the color from the parent element */
+}
+
+/* Images and Videos - Fit perfectly within the screen */
+.media-content {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block; /* Ensures no unwanted whitespace */
+}
+
+.media-content[autoplay] {
+    pointer-events: none; /* Prevents accidental clicks */
+}
+
+@keyframes blink {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.waiting-message-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.waiting-message {
+    font-size: 4vw;
+    font-weight: bold;
+    color: gray;
+    text-align: center;
+    opacity: 0.7;
+    animation: blink 1.5s infinite ease-in-out;
+}
+
+/* Font sizes based on character count */
+.font-size-large {
+    font-size: 6vw;
+}
+
+.font-size-medium {
+    font-size: 4vw;
+}
+
+.font-size-small {
+    font-size: 2vw;
+}
+
+/* Alignment classes for Quill editor */
+.ql-align-left {
+    text-align: left !important;
+}
+
+.ql-align-center {
+    text-align: center !important;
+}
+
+.ql-align-right {
+    text-align: right !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.fade-in {
+    animation: fadeIn 1s forwards;
+}
+
+.fade-out {
+    animation: fadeOut 1s forwards;
+}
