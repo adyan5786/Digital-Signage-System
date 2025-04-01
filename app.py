@@ -3,11 +3,14 @@ import secrets
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv  # Import this to load environment variables from .env file
+
+load_dotenv()  # Load environment variables from .env file
 
 app = Flask(__name__)
 
 # Secure random secret key for session management
-app.secret_key = secrets.token_hex(32)
+app.secret_key = os.getenv('SECRET_KEY', secrets.token_hex(32))
 
 # SocketIO setup with CORS support
 socketio = SocketIO(app, ping_timeout=120, ping_interval=25, cors_allowed_origins="*")
@@ -57,7 +60,10 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
 
-        if username == "RizviAdmin2025" and password == "CodeLike":
+        env_username = os.getenv("ADMIN_USERNAME")
+        env_password = os.getenv("ADMIN_PASSWORD")
+
+        if username == env_username and password == env_password:
             clear_uploads_on_login()  # <- Clear uploads on successful login
             session["user"] = username
             logged_in_users[username] = True
@@ -84,7 +90,7 @@ def logout():
 @app.route("/editor")
 def editor():
     if "user" not in session or session.get("user") is None:
-        return redirect(url_for("login"))  
+        return redirect(url_for("login"))
 
     # Notify all connected display screens that a user is logged in
     socketio.emit("user_logged_in", {}, room="page2_users")
@@ -116,7 +122,7 @@ def on_connect():
 @socketio.on("send_text")
 def handle_text(data):
     socketio.emit("update_content", {"type": "text", "message": data["message"], "align": data.get("align", "left")}, room="page2_users")
-    
+
 @socketio.on("clear_display")
 def handle_clear_display():
     socketio.emit("clear_display", {}, room="page2_users")
@@ -125,7 +131,7 @@ def handle_clear_display():
 def check_login_status(data=None):
     """Check if any user is logged in when a new tab connects."""
     is_logged_in = any(logged_in_users.values())  # Check if any user is logged in
-    emit("check_login_status", {"logged_in": is_logged_in}, to=request.sid)  
+    emit("check_login_status", {"logged_in": is_logged_in}, to=request.sid)
 
 @socketio.on("disconnect")
 def handle_disconnect():
