@@ -14,13 +14,16 @@
         document.addEventListener("DOMContentLoaded", function () {
             showWaitingMessage();
             checkLoginStatus();
+            console.log("Receiver page loaded.");
         });
 
         socket.on("connect", function () {
             checkLoginStatus();
+            console.log("Connected to WebSocket");
         });
 
         socket.on("disconnect", function () {
+            console.log("Disconnected. Attempting to reconnect...");
             setTimeout(() => {
                 socket.connect();
             }, 3000);
@@ -50,32 +53,38 @@
                     video.muted = false;
                     break;
             }
+            console.log("Video control action received:", data.action);
         });
 
         function showWaitingMessage() {
             var contentBox = document.getElementById("content");
             contentBox.innerHTML = '<div class="waiting-message-container"><p class="waiting-message">Waiting for Connection...</p></div>';
+            console.log("Waiting message displayed.");
         }
 
         function checkLoginStatus() {
             socket.emit("check_login_status");
+            console.log("Checking login status.");
         }
 
         socket.on("check_login_status", (response) => {
             if (response && response.logged_in) {
                 userLoggedIn = true;
                 document.getElementById("content").innerHTML = "";
+                console.log("User is logged in.");
             }
         });
 
         socket.on("user_logged_in", function () {
             userLoggedIn = true;
             document.getElementById("content").innerHTML = "";
+            console.log("User logged in.");
         });
 
         socket.on("user_logged_out", function () {
             userLoggedIn = false;
             showWaitingMessage();
+            console.log("User logged out.");
         });
 
         socket.on("update_content", function (data) {
@@ -90,6 +99,7 @@
             } else {
                 appendNewContent(data);
             }
+            console.log("Content updated:", data);
         });
 
         socket.on("clear_display", function () {
@@ -98,6 +108,7 @@
             } else {
                 document.getElementById("content").innerHTML = "";
             }
+            console.log("Display cleared.");
         });
 
         function appendNewContent(data) {
@@ -147,6 +158,7 @@
                 newContent.classList.add("fade-in");
                 contentBox.appendChild(newContent);
             }
+            console.log("New content appended:", newContent);
         }
 
         function setFontSize(element) {
@@ -158,6 +170,7 @@
             } else {
                 element.classList.add("font-size-small");
             }
+            console.log("Font size set for text length:", textLength);
         }
 
         document.addEventListener("contextmenu", event => event.preventDefault());

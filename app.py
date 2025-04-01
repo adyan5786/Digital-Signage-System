@@ -32,6 +32,7 @@ logged_in_users = {}
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Clear uploads on login
 def clear_uploads_on_login():
@@ -41,8 +42,9 @@ def clear_uploads_on_login():
         try:
             if os.path.isfile(file_path):
                 os.unlink(file_path)
+                logger.info(f"Deleted file: {file_path}")
         except Exception as e:
-            logging.error(f"Error deleting {file_path}: {e}")
+            logger.error(f"Error deleting {file_path}: {e}")
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "mp4", "mov", "avi", "mkv", "quicktime"}
@@ -63,6 +65,7 @@ def login():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
+        logger.info(f"Login attempt for user: {username}")
 
         env_username = os.getenv("ADMIN_USERNAME")
         env_password = os.getenv("ADMIN_PASSWORD")
@@ -72,7 +75,10 @@ def login():
             session["user"] = username
             logged_in_users[username] = True
             socketio.emit("user_logged_in", {}, room="page2_users")
+            logger.info(f"User {username} logged in successfully")
             return redirect(url_for("editor"))
+        else:
+            logger.warning(f"Failed login attempt for user: {username}")
 
     return render_template("login.html")
 
@@ -82,6 +88,7 @@ def logout():
     username = session.get("user")
     if username:
         logged_in_users.pop(username, None)
+        logger.info(f"User {username} logged out")
 
     session.clear()
 
@@ -94,10 +101,12 @@ def logout():
 @app.route("/editor")
 def editor():
     if "user" not in session or session.get("user") is None:
+        logger.warning("Unauthorized access to editor page")
         return redirect(url_for("login"))
 
     # Notify all connected display screens that a user is logged in
     socketio.emit("user_logged_in", {}, room="page2_users")
+    logger.info("User accessed the editor page")
 
     return render_template("page1.html")
 
@@ -116,54 +125,65 @@ def on_connect():
     referer = request.headers.get("Referer", "")
     if "other" in referer:
         join_room("page2_users")
+        logger.info("New connection to page2_users room")
 
         # Send login status when a new display connects
         is_logged_in = any(logged_in_users.values())
         emit("check_login_status", {"logged_in": is_logged_in})
     else:
         join_room("page1_users")
+        logger.info("New connection to page1_users room")
 
 @socketio.on("send_text")
 def handle_text(data):
     socketio.emit("update_content", {"type": "text", "message": data["message"], "align": data.get("align", "left")}, room="page2_users")
+    logger.info(f"Text message sent: {data['message']}")
 
 @socketio.on("clear_display")
 def handle_clear_display():
     socketio.emit("clear_display", {}, room="page2_users")
+    logger.info("Clear display signal sent")
 
 @socketio.on("check_login_status")
 def check_login_status(data=None):
     """Check if any user is logged in when a new tab connects."""
     is_logged_in = any(logged_in_users.values())
     emit("check_login_status", {"logged_in": is_logged_in}, to=request.sid)
+    logger.info("Checked login status")
 
 @socketio.on("disconnect")
 def handle_disconnect():
-    pass
+    logger.info("Client disconnected")
 
 @socketio.on("video_control")
 def handle_video_control(data):
     socketio.emit("video_control", data, room="page2_users")
+    logger.info(f"Video control signal sent: {data}")
 
 @socketio.on("autoplay_blocked")
 def handle_autoplay_blocked():
     socketio.emit("autoplay_blocked", room="page1_users")
+    logger.info("Autoplay blocked signal sent")
 
 @app.route("/upload", methods=["POST"])
 def upload():
     if "file" not in request.files:
+        logger.warning("No file uploaded")
         return "No file uploaded", 400
 
     file = request.files["file"]
     if file.filename == "":
+        logger.warning("No selected file")
         return "No selected file", 400
 
     if not allowed_file(file.filename):
+        logger.warning("Invalid file type uploaded")
         return "Invalid file type", 400
 
     filename = secure_filename(file.filename)
     filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     file.save(filepath)
+    logger.info(f"File uploaded: {filename}")
 
     file_url = f"/uploads/{filename}"
     file_type = "image" if file.content_type.startswith("image") else "video"
@@ -173,4 +193,5 @@ def upload():
     return "File uploaded successfully", 200
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True)
+    # Disable debug mode for production
+    socketio.run(app, debug=False)
