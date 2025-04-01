@@ -1,11 +1,12 @@
 import os
 import secrets
+import logging
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
 from werkzeug.utils import secure_filename
-from dotenv import load_dotenv  # Import this to load environment variables from .env file
+from dotenv import load_dotenv
 
-load_dotenv()  # Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -26,8 +27,11 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 # Ensure upload directory exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Track logged-in users (Key: user_id, Value: boolean)
+# Track logged-in users
 logged_in_users = {}
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 
 # Clear uploads on login
 def clear_uploads_on_login():
@@ -38,7 +42,7 @@ def clear_uploads_on_login():
             if os.path.isfile(file_path):
                 os.unlink(file_path)
         except Exception as e:
-            print(f"Error deleting {file_path}: {e}")
+            logging.error(f"Error deleting {file_path}: {e}")
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "mp4", "mov", "avi", "mkv", "quicktime"}
@@ -64,7 +68,7 @@ def login():
         env_password = os.getenv("ADMIN_PASSWORD")
 
         if username == env_username and password == env_password:
-            clear_uploads_on_login()  # <- Clear uploads on successful login
+            clear_uploads_on_login()
             session["user"] = username
             logged_in_users[username] = True
             socketio.emit("user_logged_in", {}, room="page2_users")
@@ -77,9 +81,9 @@ def login():
 def logout():
     username = session.get("user")
     if username:
-        logged_in_users.pop(username, None)  # Remove from tracking
+        logged_in_users.pop(username, None)
 
-    session.clear()  # Clears session data
+    session.clear()
 
     # Notify all TV displays that the user logged out
     socketio.emit("user_logged_out", {}, room="page2_users")
@@ -114,7 +118,7 @@ def on_connect():
         join_room("page2_users")
 
         # Send login status when a new display connects
-        is_logged_in = any(logged_in_users.values())  # If any user is logged in
+        is_logged_in = any(logged_in_users.values())
         emit("check_login_status", {"logged_in": is_logged_in})
     else:
         join_room("page1_users")
@@ -130,7 +134,7 @@ def handle_clear_display():
 @socketio.on("check_login_status")
 def check_login_status(data=None):
     """Check if any user is logged in when a new tab connects."""
-    is_logged_in = any(logged_in_users.values())  # Check if any user is logged in
+    is_logged_in = any(logged_in_users.values())
     emit("check_login_status", {"logged_in": is_logged_in}, to=request.sid)
 
 @socketio.on("disconnect")
