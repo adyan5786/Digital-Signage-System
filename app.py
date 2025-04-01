@@ -14,7 +14,8 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', secrets.token_hex(32))
 
 # SocketIO setup with CORS support
-socketio = SocketIO(app, ping_timeout=120, ping_interval=25, cors_allowed_origins="*")
+allowed_origins = ["https://digital-signage-system.onrender.com", "http://localhost:10000"]
+socketio = SocketIO(app, ping_timeout=120, ping_interval=25, cors_allowed_origins=allowed_origins)
 
 UPLOAD_FOLDER = "static/uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
