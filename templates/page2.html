@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receiver Page</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <link rel="stylesheet" href="/static/style-tv.css">
+    <script>
+        var socket = io();
+        var userLoggedIn = false;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            showWaitingMessage();
+            checkLoginStatus();
+        });
+
+        socket.on("connect", function () {
+            checkLoginStatus();
+        });
+
+        socket.on("disconnect", function () {
+            setTimeout(() => {
+                socket.connect();
+            }, 3000);
+        });
+
+        socket.on("video_control", function (data) {
+            var video = document.querySelector("video");
+
+            if (!video) {
+                return;
+            }
+
+            switch (data.action) {
+                case "play":
+                    video.play().catch(err => {
+                        console.log("Autoplay blocked.");
+                        socket.emit("autoplay_blocked");
+                    });
+                    break;
+                case "pause":
+                    video.pause();
+                    break;
+                case "mute":
+                    video.muted = true;
+                    break;
+                case "unmute":
+                    video.muted = false;
+                    break;
+            }
+        });
+
+        function showWaitingMessage() {
+            var contentBox = document.getElementById("content");
+            contentBox.innerHTML = '<div class="waiting-message-container"><p class="waiting-message">Waiting for Connection...</p></div>';
+        }
+
+        function checkLoginStatus() {
+            socket.emit("check_login_status");
+        }
+
+        socket.on("check_login_status", (response) => {
+            if (response && response.logged_in) {
+                userLoggedIn = true;
+                document.getElementById("content").innerHTML = "";
+            }
+        });
+
+        socket.on("user_logged_in", function () {
+            userLoggedIn = true;
+            document.getElementById("content").innerHTML = "";
+        });
+
+        socket.on("user_logged_out", function () {
+            userLoggedIn = false;
+            showWaitingMessage();
+        });
+
+        socket.on("update_content", function (data) {
+            userLoggedIn = true;
+            var contentBox = document.getElementById("content");
+            if (contentBox.children.length > 0) {
+                contentBox.firstChild.classList.add("fade-out");
+                contentBox.firstChild.addEventListener("animationend", function () {
+                    contentBox.innerHTML = "";
+                    appendNewContent(data);
+                });
+            } else {
+                appendNewContent(data);
+            }
+        });
+
+        socket.on("clear_display", function () {
+            if (!userLoggedIn) {
+                showWaitingMessage();
+            } else {
+                document.getElementById("content").innerHTML = "";
+            }
+        });
+
+        function appendNewContent(data) {
+            var contentBox = document.getElementById("content");
+            var newContent = null;
+
+            if (data.type === "text") {
+                var messageElement = document.createElement("p");
+                messageElement.classList.add("formatted-text");
+                messageElement.innerHTML = data.message.replace(/\n/g, "<br>");
+                messageElement.style.textAlign = data.align || 'left'; // Apply alignment
+                setFontSize(messageElement);
+                newContent = messageElement;
+            } else if (data.type === "image") {
+                var img = document.createElement("img");
+                img.src = data.file_url;
+                img.classList.add("media-content");
+                newContent = img;
+            } else if (data.type === "video") {
+                var video = document.createElement("video");
+                video.src = data.file_url;
+                video.classList.add("media-content");
+                video.autoplay = true;
+                video.loop = true;
+                video.controls = true;
+                video.muted = false; // Ensure sound is on
+
+                video.addEventListener("loadeddata", () => {
+                    let playPromise = video.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(error => {
+                            console.log("Autoplay blocked.");
+                            socket.emit("autoplay_blocked");
+                        });
+                    }
+                });
+
+                video.addEventListener("click", () => {
+                    video.muted = false;
+                    video.play();
+                });
+
+                newContent = video;
+            }
+
+            if (newContent) {
+                newContent.classList.add("fade-in");
+                contentBox.appendChild(newContent);
+            }
+        }
+
+        function setFontSize(element) {
+            var textLength = element.innerText.length;
+            if (textLength <= 50) {
+                element.classList.add("font-size-large");
+            } else if (textLength <= 100) {
+                element.classList.add("font-size-medium");
+            } else {
+                element.classList.add("font-size-small");
+            }
+        }
+
+        document.addEventListener("contextmenu", event => event.preventDefault());
+    </script>
+</head>
+
+<body>
+    <div class="content-box" id="content"></div>
+</body>
+
+</html>
