@@ -39,6 +39,8 @@
                     sendText();
                 }
             });
+
+            setupSelectableButtons();
         });
     
         socket.on("connect", function () {
@@ -190,6 +192,17 @@
             socket.emit("clear_display");
             videoControls.style.display = "none";  // Hide video controls when clearing display
         }
+
+        function setupSelectableButtons() {
+            const buttons = document.querySelectorAll('.selectable-button');
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Toggle selected class
+                    buttons.forEach(btn => btn.classList.remove('selected'));
+                    button.classList.add('selected');
+                });
+            });
+        }
     </script>
 </head>
 
@@ -202,10 +215,18 @@
         <h1>Editor</h1>
 
         <div id="editor" class="text-area"></div>
+        
         <p id="charCount" class="char-count">0 / 2000 characters</p>
+        
+        <div class="selectable-buttons">
+            <button class="selectable-button btn selected">Fade in/Fade out</button>
+            <button class="selectable-button btn">Scrolling</button>
+        </div>
+        
         <button id="sendTextBtn" onclick="sendText()" class="btn" disabled>Send Text</button>
+        
         <p id="statusIndicator" class="status-indicator"></p>
-
+        
         <hr>
 
         <input type="file" id="fileInput" accept="image/*,video/*" class="file-input">
