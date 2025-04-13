@@ -124,6 +124,23 @@ body, html {
     to { opacity: 0; }
 }
 
+/* Add scrolling effect */
+.scrolling-text {
+    position: absolute;
+    white-space: nowrap;
+    animation: scroll-left 10s linear infinite;
+}
+
+@keyframes scroll-left {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(-100%);
+    }
+}
+
+/* Fading animations */
 .fade-in {
     animation: fadeIn 1s forwards;
 }

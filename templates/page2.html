@@ -108,9 +108,13 @@
                 var messageElement = document.createElement("p");
                 messageElement.classList.add("formatted-text");
                 messageElement.innerHTML = data.message.replace(/\n/g, "<br>");
-                messageElement.style.textAlign = data.align || 'left'; // Apply alignment
+                messageElement.style.textAlign = data.align || 'left';
                 setFontSize(messageElement);
                 newContent = messageElement;
+
+                if (data.animation === "scroll") {
+                    messageElement.classList.add("scrolling-text");
+                }
             } else if (data.type === "image") {
                 var img = document.createElement("img");
                 img.src = data.file_url;
@@ -144,8 +148,21 @@
             }
 
             if (newContent) {
-                newContent.classList.add("fade-in");
-                contentBox.appendChild(newContent);
+                if (data.animation === "fade") {
+                    newContent.classList.add("fade-in");
+                    if (contentBox.children.length > 0) {
+                        contentBox.firstChild.classList.add("fade-out");
+                        contentBox.firstChild.addEventListener("animationend", function () {
+                            contentBox.innerHTML = "";
+                            contentBox.appendChild(newContent);
+                        });
+                    } else {
+                        contentBox.appendChild(newContent);
+                    }
+                } else if (data.animation === "scroll") {
+                    contentBox.innerHTML = ""; // Clear previous content
+                    contentBox.appendChild(newContent);
+                }
             }
         }
 

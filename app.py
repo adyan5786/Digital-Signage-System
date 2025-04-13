@@ -115,7 +115,16 @@ def on_connect():
 
 @socketio.on("send_text")
 def handle_text(data):
-    socketio.emit("update_content", {"type": "text", "message": data["message"], "align": data.get("align", "left")}, room="page2_users")
+    socketio.emit(
+        "update_content", 
+        {
+            "type": "text", 
+            "message": data["message"], 
+            "align": data.get("align", "left"),
+            "animation": data.get("animation", "fade")  # Include animation type
+        }, 
+        room="page2_users"
+    )
     
 @socketio.on("clear_display")
 def handle_clear_display():

@@ -12,8 +12,8 @@
     <script>
         var socket = io();
         var quill;
-    
-        document.addEventListener("DOMContentLoaded", function() {
+
+        document.addEventListener("DOMContentLoaded", function () {
             quill = new Quill('#editor', {
                 theme: 'snow',
                 modules: {
@@ -23,17 +23,17 @@
                     ]
                 },
             });
-    
+
             quill.clipboard.dangerouslyPasteHTML('<p class="ql-align-center"><br></p>');
-    
-            quill.on('text-change', function() {
+
+            quill.on('text-change', function () {
                 updateCharacterCount();
             });
-    
+
             updateCharacterCount();
-    
+
             // Add event listener for keydown events
-            document.addEventListener("keydown", function(event) {
+            document.addEventListener("keydown", function (event) {
                 if (event.key === "Enter" && !event.shiftKey) {
                     event.preventDefault(); // Prevent default Enter behavior in Quill
                     sendText();
@@ -42,30 +42,43 @@
 
             setupSelectableButtons();
         });
-    
+
+        var selectedAnimation = 'fade'; // Default animation is 'fade'
+
+        function setupSelectableButtons() {
+            const buttons = document.querySelectorAll('.selectable-button');
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Toggle selected class
+                    buttons.forEach(btn => btn.classList.remove('selected'));
+                    button.classList.add('selected');
+                    selectedAnimation = button.textContent.trim().toLowerCase() === 'scrolling' ? 'scroll' : 'fade';
+                });
+            });
+        }
         socket.on("connect", function () {
             console.log("Connected to WebSocket");
         });
-    
+
         socket.on("disconnect", function () {
             console.log("Disconnected. Attempting to reconnect...");
             setTimeout(() => {
                 socket.connect();
             }, 3000);
         });
-    
+
         socket.on("autoplay_blocked", function () {
             var statusIndicator = document.getElementById("statusIndicator");
             statusIndicator.textContent = "❌ Autoplay blocked. Interaction with the other page is needed.";
             setTimeout(() => statusIndicator.textContent = "", 3000);
         });
-    
+
         function sendText() {
             var statusIndicator = document.getElementById("statusIndicator");
             var videoControls = document.getElementById("videoControls");
             var message = quill.root.innerHTML;
             var alignment = 'left'; // Default alignment
-    
+
             // Check the class of the first child to determine alignment
             if (quill.root.firstChild.classList.contains('ql-align-center')) {
                 alignment = 'center';
@@ -74,57 +87,56 @@
             } else if (quill.root.firstChild.classList.contains('ql-align-left')) {
                 alignment = 'left';
             }
-    
+
             // Preserve spaces and newlines
             message = message.replace(/<p><br><\/p>/g, "<br>").trim();
-    
+
             if (message.length > 0 && message.length <= 2000) {
                 statusIndicator.textContent = "🟡 Sending...";
-                socket.emit("send_text", { "message": message, "align": alignment }, function () {
+                socket.emit("send_text", { "message": message, "align": alignment, "animation": selectedAnimation }, function () {
                     statusIndicator.textContent = "✅ Sent!";
                     setTimeout(() => statusIndicator.textContent = "", 3000);
-                    videoControls.style.display = "none";  // Hide video controls
                 });
-                quill.root.innerHTML = '<p class="ql-align-center"><br></p>'; // Keep alignment centered
+                quill.root.innerHTML = '<p class="ql-align-center"><br></p>';
                 updateCharacterCount();
             }
         }
-    
+
         function uploadFile() {
             var fileInput = document.getElementById("fileInput");
             var statusIndicator = document.getElementById("statusIndicator");
             var videoControls = document.getElementById("videoControls");
-    
+
             if (fileInput.files.length === 0) {
                 statusIndicator.textContent = "❌ No file selected.";
                 return;
             }
-    
+
             var file = fileInput.files[0];
             var allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
             var allowedVideoTypes = ["video/mp4", "video/mov", "video/avi", "video/mkv", "video/quicktime"];
-    
+
             var isImage = allowedImageTypes.includes(file.type);
             var isVideo = allowedVideoTypes.includes(file.type);
-    
+
             if (!isImage && !isVideo) {
                 statusIndicator.textContent = "❌ Invalid file type. Only images and videos are allowed.";
                 return;
             }
-    
+
             var formData = new FormData();
             formData.append("file", file);
-    
+
             var xhr = new XMLHttpRequest();
             xhr.open("POST", "/upload", true);
-    
+
             xhr.upload.onprogress = function (event) {
                 if (event.lengthComputable) {
                     let percentComplete = Math.round((event.loaded / event.total) * 100);
                     statusIndicator.textContent = `🟡 Uploading... ${percentComplete}%`;
                 }
             };
-    
+
             xhr.onload = function () {
                 if (xhr.status === 200) {
                     statusIndicator.textContent = "✅ Uploaded!";
@@ -134,42 +146,42 @@
                 }
                 setTimeout(() => statusIndicator.textContent = "", 3000);
             };
-    
+
             xhr.onerror = function () {
                 statusIndicator.textContent = "❌ Upload failed.";
             };
-    
+
             xhr.send(formData);
             fileInput.value = "";
         }
-    
+
         function controlVideo(action) {
             var videoControls = document.getElementById("videoControls");
-    
+
             if (videoControls.style.display === "none") {
                 alert("No video uploaded yet!");
                 return;
             }
-    
+
             socket.emit("video_control", { action: action });
         }
-    
+
         function playVideo() { controlVideo("play"); }
         function pauseVideo() { controlVideo("pause"); }
         function muteVideo() { controlVideo("mute"); }
         function unmuteVideo() { controlVideo("unmute"); }
-    
+
         function updateCharacterCount() {
             var charCount = document.getElementById("charCount");
             var sendButton = document.getElementById("sendTextBtn");
             var statusIndicator = document.getElementById("statusIndicator");
-    
+
             var text = quill.getText().trim();
             var lines = text.split("\n");
             var currentLength = text.length;
-    
+
             charCount.textContent = currentLength + " / 2000 characters";
-    
+
             if (lines.length > 20) {
                 statusIndicator.textContent = "❌ Cannot go over the 20 Line limit.";
                 sendButton.disabled = true;
@@ -181,28 +193,18 @@
                 sendButton.disabled = currentLength === 0;
             }
         }
-    
+
         function clearEditor() {
             quill.root.innerHTML = '<p class="ql-align-center"><br></p>'; // Keep alignment centered
             updateCharacterCount();
         }
-    
+
         function clearDisplay() {
             var videoControls = document.getElementById("videoControls");
             socket.emit("clear_display");
             videoControls.style.display = "none";  // Hide video controls when clearing display
         }
 
-        function setupSelectableButtons() {
-            const buttons = document.querySelectorAll('.selectable-button');
-            buttons.forEach(button => {
-                button.addEventListener('click', () => {
-                    // Toggle selected class
-                    buttons.forEach(btn => btn.classList.remove('selected'));
-                    button.classList.add('selected');
-                });
-            });
-        }
     </script>
 </head>
 
@@ -215,18 +217,18 @@
         <h1>Editor</h1>
 
         <div id="editor" class="text-area"></div>
-        
+
         <p id="charCount" class="char-count">0 / 2000 characters</p>
-        
+
         <div class="selectable-buttons">
             <button class="selectable-button btn selected">Fade in/Fade out</button>
             <button class="selectable-button btn">Scrolling</button>
         </div>
-        
+
         <button id="sendTextBtn" onclick="sendText()" class="btn" disabled>Send Text</button>
-        
+
         <p id="statusIndicator" class="status-indicator"></p>
-        
+
         <hr>
 
         <input type="file" id="fileInput" accept="image/*,video/*" class="file-input">
