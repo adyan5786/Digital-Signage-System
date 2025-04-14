@@ -162,13 +162,16 @@
                 } else if (data.animation === "scroll") {
                     contentBox.innerHTML = ""; // Clear previous content
                     contentBox.appendChild(newContent);
+                } else {
+                    newContent.classList.add("fade-in");
+                    contentBox.appendChild(newContent);
                 }
             }
         }
 
         function setFontSize(element) {
             var textLength = element.innerText.length;
-            if (textLength <= 50) {
+            if (textLength <= 100) {
                 element.classList.add("font-size-large");
             } else if (textLength <= 100) {
                 element.classList.add("font-size-medium");

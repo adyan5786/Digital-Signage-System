@@ -1,7 +1,7 @@
 import os
 import secrets
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_socketio import SocketIO, emit, join_room
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
