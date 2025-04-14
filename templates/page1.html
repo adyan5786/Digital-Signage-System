@@ -52,7 +52,7 @@
                     // Toggle selected class
                     buttons.forEach(btn => btn.classList.remove('selected'));
                     button.classList.add('selected');
-                    selectedAnimation = button.textContent.trim().toLowerCase() === 'scrolling' ? 'scroll' : 'fade';
+                    selectedAnimation = button.textContent.trim().toLowerCase() === 'scroll' ? 'scroll' : 'fade';
                 });
             });
         }
@@ -221,8 +221,8 @@
         <p id="charCount" class="char-count">0 / 2000 characters</p>
 
         <div class="selectable-buttons">
-            <button class="selectable-button btn selected">Fade in/Fade out</button>
-            <button class="selectable-button btn">Scrolling</button>
+            <button class="selectable-button btn selected">Static</button>
+            <button class="selectable-button btn">Scroll</button>
         </div>
 
         <button id="sendTextBtn" onclick="sendText()" class="btn" disabled>Send Text</button>
