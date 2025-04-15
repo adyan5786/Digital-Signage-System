@@ -3,6 +3,7 @@ import secrets
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
 from werkzeug.utils import secure_filename
+import logging
 
 app = Flask(__name__)
 
@@ -34,8 +35,10 @@ def clear_uploads_on_login():
         try:
             if os.path.isfile(file_path):
                 os.unlink(file_path)
+                logging.info(f"Deleted file: {file_path}")
         except Exception as e:
             print(f"Error deleting {file_path}: {e}")
+            logging.error(f"Error deleting {file_path}: {e}")
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "mp4", "mov", "avi", "mkv", "quicktime"}
@@ -56,11 +59,13 @@ def login():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
+        logging.info(f"Login attempted with username: {username}")
 
         if username == "admin" and password == "password":
             clear_uploads_on_login()  # <- Clear uploads on successful login
             session["user"] = username
             logged_in_users[username] = True
+            logging.info(f"User logged in: {username}")
             socketio.emit("user_logged_in", {}, room="page2_users")
             return redirect(url_for("editor"))
 
@@ -72,6 +77,7 @@ def logout():
     username = session.get("user")
     if username:
         logged_in_users.pop(username, None)  # Remove from tracking
+        logging.info(f"User logged out: {username}")
 
     session.clear()  # Clears session data
 
@@ -104,6 +110,7 @@ def uploaded_file(filename):
 @socketio.on("connect")
 def on_connect():
     referer = request.headers.get("Referer", "")
+    logging.info(f"Socket connected. Referer: {referer}")
     if "other" in referer:
         join_room("page2_users")
 
@@ -151,13 +158,16 @@ def handle_autoplay_blocked():
 @app.route("/upload", methods=["POST"])
 def upload():
     if "file" not in request.files:
+        logging.warning("No file uploaded")
         return "No file uploaded", 400
 
     file = request.files["file"]
     if file.filename == "":
+        logging.warning("No file selected for upload")
         return "No selected file", 400
 
     if not allowed_file(file.filename):
+        logging.warning(f"Invalid file type attempted: {file.filename}")
         return "Invalid file type", 400
 
     filename = secure_filename(file.filename)
@@ -166,6 +176,7 @@ def upload():
 
     file_url = f"/uploads/{filename}"
     file_type = "image" if file.content_type.startswith("image") else "video"
+    logging.info(f"File uploaded: {filename}, Type: {file_type}")
 
     socketio.emit("update_content", {"type": file_type, "file_url": file_url}, room="page2_users")
 

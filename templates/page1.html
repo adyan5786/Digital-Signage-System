@@ -77,6 +77,7 @@
             var statusIndicator = document.getElementById("statusIndicator");
             var videoControls = document.getElementById("videoControls");
             var message = quill.root.innerHTML;
+            console.log(`Sending text: ${message}`);
             var alignment = 'left'; // Default alignment
 
             // Check the class of the first child to determine alignment
@@ -108,11 +109,13 @@
             var videoControls = document.getElementById("videoControls");
 
             if (fileInput.files.length === 0) {
+                console.log("No file selected for upload.");
                 statusIndicator.textContent = "❌ No file selected.";
                 return;
             }
 
             var file = fileInput.files[0];
+            console.log(`Uploading file: ${file.name}, Type: ${file.type}`);
             var allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
             var allowedVideoTypes = ["video/mp4", "video/mov", "video/avi", "video/mkv", "video/quicktime"];
 
@@ -163,6 +166,7 @@
                 return;
             }
 
+            console.log(`Video control action: ${action}`);
             socket.emit("video_control", { action: action });
         }
 
@@ -201,8 +205,17 @@
 
         function clearDisplay() {
             var videoControls = document.getElementById("videoControls");
-            socket.emit("clear_display");
-            videoControls.style.display = "none";  // Hide video controls when clearing display
+        var statusIndicator = document.getElementById("statusIndicator");
+
+        // Emit the clear display event
+        socket.emit("clear_display");
+
+        // Hide video controls and update status indicator
+        videoControls.style.display = "none";
+        statusIndicator.textContent = "✅ Cleared Display!";
+        console.log("Cleared display event triggered");
+
+        setTimeout(() => statusIndicator.textContent = "", 3000); // Clear status text after 3 seconds
         }
 
     </script>
