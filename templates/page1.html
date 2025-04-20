@@ -12,14 +12,17 @@
     <script>
         var socket = io();
         var quill;
+        var hasUploadedSingleVideo = false; // Track if current upload contains exactly one video
+        var currentVideoIndex = 0;
+        var selectedAnimation = 'fade';
 
         document.addEventListener("DOMContentLoaded", function () {
             quill = new Quill('#editor', {
                 theme: 'snow',
                 modules: {
                     toolbar: [
-                        [{ 'color': [] }, 'bold', 'italic', 'underline'], // Add color, bold, italic, underline buttons together
-                        [{ 'align': '' }, { 'align': 'center' }, { 'align': 'right' }] // Add alignment buttons
+                        [{ 'color': [] }, 'bold', 'italic', 'underline'],
+                        [{ 'align': '' }, { 'align': 'center' }, { 'align': 'right' }]
                     ]
                 },
             });
@@ -32,30 +35,17 @@
 
             updateCharacterCount();
 
-            // Add event listener for keydown events
             document.addEventListener("keydown", function (event) {
                 if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault(); // Prevent default Enter behavior in Quill
+                    event.preventDefault();
                     sendText();
                 }
             });
 
             setupSelectableButtons();
+            setupDragAndDrop();
         });
 
-        var selectedAnimation = 'fade'; // Default animation is 'fade'
-
-        function setupSelectableButtons() {
-            const buttons = document.querySelectorAll('.selectable-button');
-            buttons.forEach(button => {
-                button.addEventListener('click', () => {
-                    // Toggle selected class
-                    buttons.forEach(btn => btn.classList.remove('selected'));
-                    button.classList.add('selected');
-                    selectedAnimation = button.textContent.trim().toLowerCase() === 'scroll' ? 'scroll' : 'fade';
-                });
-            });
-        }
         socket.on("connect", function () {
             console.log("Connected to WebSocket");
         });
@@ -73,14 +63,23 @@
             setTimeout(() => statusIndicator.textContent = "", 3000);
         });
 
+        function setupSelectableButtons() {
+            const buttons = document.querySelectorAll('.selectable-button');
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    buttons.forEach(btn => btn.classList.remove('selected'));
+                    button.classList.add('selected');
+                    selectedAnimation = button.textContent.trim().toLowerCase() === 'scroll' ? 'scroll' : 'fade';
+                });
+            });
+        }
+
         function sendText() {
             var statusIndicator = document.getElementById("statusIndicator");
-            var videoControls = document.getElementById("videoControls");
             var message = quill.root.innerHTML;
             console.log(`Sending text: ${message}`);
-            var alignment = 'left'; // Default alignment
+            var alignment = 'left';
 
-            // Check the class of the first child to determine alignment
             if (quill.root.firstChild.classList.contains('ql-align-center')) {
                 alignment = 'center';
             } else if (quill.root.firstChild.classList.contains('ql-align-right')) {
@@ -89,7 +88,6 @@
                 alignment = 'left';
             }
 
-            // Preserve spaces and newlines
             message = message.replace(/<p><br><\/p>/g, "<br>").trim();
 
             if (message.length > 0 && message.length <= 2000) {
@@ -103,32 +101,98 @@
             }
         }
 
-        function uploadFile() {
+        function setupDragAndDrop() {
+            const dragDropZone = document.getElementById('dragDropZone');
+            const fileInput = document.getElementById('fileInput');
+            let dragCounter = 0;
+
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                document.addEventListener(eventName, preventDefaults, false);
+            });
+
+            // Show/hide drop zone when files are dragged over document
+            document.addEventListener('dragenter', function (e) {
+                // Only react if dragging files (not text or other elements)
+                if (hasFiles(e)) {
+                    dragCounter++;
+                    dragDropZone.classList.add('active');
+                }
+            });
+
+            document.addEventListener('dragleave', function (e) {
+                // Only react if leaving the window (not child elements)
+                if (e.clientX === 0 || e.clientY === 0 ||
+                    e.clientX >= (window.innerWidth || document.documentElement.clientWidth) ||
+                    e.clientY >= (window.innerHeight || document.documentElement.clientHeight)) {
+                    dragCounter = 0;
+                    dragDropZone.classList.remove('active');
+                }
+            });
+
+            document.addEventListener('drop', function (e) {
+                dragCounter = 0;
+                dragDropZone.classList.remove('active');
+
+                if (hasFiles(e)) {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+
+                    if (files.length) {
+                        // Clear previous files and add new ones
+                        fileInput.files = files;
+                        uploadFiles();
+                    }
+                }
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function hasFiles(event) {
+                if (event.dataTransfer.types) {
+                    for (let i = 0; i < event.dataTransfer.types.length; i++) {
+                        if (event.dataTransfer.types[i] === 'Files') {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+        }
+
+        function uploadFiles() {
             var fileInput = document.getElementById("fileInput");
             var statusIndicator = document.getElementById("statusIndicator");
             var videoControls = document.getElementById("videoControls");
 
-            if (fileInput.files.length === 0) {
-                console.log("No file selected for upload.");
-                statusIndicator.textContent = "❌ No file selected.";
+            var files = fileInput.files;
+            if (!files || files.length === 0) {
+                console.log("No files selected for upload.");
+                statusIndicator.textContent = "❌ No files selected.";
                 return;
             }
 
-            var file = fileInput.files[0];
-            console.log(`Uploading file: ${file.name}, Type: ${file.type}`);
             var allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
             var allowedVideoTypes = ["video/mp4", "video/mov", "video/avi", "video/mkv", "video/quicktime"];
-
-            var isImage = allowedImageTypes.includes(file.type);
-            var isVideo = allowedVideoTypes.includes(file.type);
-
-            if (!isImage && !isVideo) {
-                statusIndicator.textContent = "❌ Invalid file type. Only images and videos are allowed.";
-                return;
-            }
+            var videoCount = 0;
+            var fileCount = fileInput.files.length;
 
             var formData = new FormData();
-            formData.append("file", file);
+            Array.from(fileInput.files).forEach((file, index) => {
+                console.log(`Uploading file: ${file.name}, Type: ${file.type}`);
+                if (!allowedImageTypes.includes(file.type) && !allowedVideoTypes.includes(file.type)) {
+                    console.log(`Invalid file type: ${file.name}`);
+                    statusIndicator.textContent = `❌ Invalid file type: ${file.name}. Only images and videos are allowed.`;
+                } else {
+                    formData.append("files[]", file);
+                    if (allowedVideoTypes.includes(file.type)) {
+                        videoCount++;
+                    }
+                }
+            });
 
             var xhr = new XMLHttpRequest();
             xhr.open("POST", "/upload", true);
@@ -142,16 +206,23 @@
 
             xhr.onload = function () {
                 if (xhr.status === 200) {
-                    statusIndicator.textContent = "✅ Uploaded!";
-                    videoControls.style.display = isVideo ? "flex" : "none";  // Show controls for videos, hide for images
+                    statusIndicator.textContent = "✅ All files uploaded!";
+                    // Show video controls only if exactly one video was uploaded
+                    hasUploadedSingleVideo = (videoCount === 1 && fileCount === 1);
+                    videoControls.style.display = hasUploadedSingleVideo ? "flex" : "none";
+                    currentVideoIndex = 0; // Reset to first video when new upload occurs
                 } else {
                     statusIndicator.textContent = "❌ Upload failed.";
+                    videoControls.style.display = "none";
+                    hasUploadedSingleVideo = false;
                 }
-                setTimeout(() => statusIndicator.textContent = "", 3000);
+                setTimeout(() => (statusIndicator.textContent = ""), 3000);
             };
 
             xhr.onerror = function () {
                 statusIndicator.textContent = "❌ Upload failed.";
+                videoControls.style.display = "none";
+                hasUploadedSingleVideo = false;
             };
 
             xhr.send(formData);
@@ -159,15 +230,16 @@
         }
 
         function controlVideo(action) {
-            var videoControls = document.getElementById("videoControls");
-
-            if (videoControls.style.display === "none") {
-                alert("No video uploaded yet!");
+            if (!hasUploadedSingleVideo) {
+                alert("No single video uploaded yet!");
                 return;
             }
 
-            console.log(`Video control action: ${action}`);
-            socket.emit("video_control", { action: action });
+            console.log(`Sending ${action} for video at index ${currentVideoIndex}`);
+            socket.emit("video_control", {
+                action: action,
+                index: currentVideoIndex
+            });
         }
 
         function playVideo() { controlVideo("play"); }
@@ -199,23 +271,24 @@
         }
 
         function clearEditor() {
-            quill.root.innerHTML = '<p class="ql-align-center"><br></p>'; // Keep alignment centered
+            quill.root.innerHTML = '<p class="ql-align-center"><br></p>';
             updateCharacterCount();
         }
 
         function clearDisplay() {
             var videoControls = document.getElementById("videoControls");
-        var statusIndicator = document.getElementById("statusIndicator");
+            var statusIndicator = document.getElementById("statusIndicator");
 
-        // Emit the clear display event
-        socket.emit("clear_display");
+            socket.emit("clear_display");
 
-        // Hide video controls and update status indicator
-        videoControls.style.display = "none";
-        statusIndicator.textContent = "✅ Cleared Display!";
-        console.log("Cleared display event triggered");
+            // Hide video controls when display is cleared
+            videoControls.style.display = "none";
+            hasUploadedSingleVideo = false;
 
-        setTimeout(() => statusIndicator.textContent = "", 3000); // Clear status text after 3 seconds
+            statusIndicator.textContent = "✅ Cleared Display!";
+            console.log("Cleared display event triggered");
+
+            setTimeout(() => statusIndicator.textContent = "", 3000);
         }
 
     </script>
@@ -243,9 +316,13 @@
         <p id="statusIndicator" class="status-indicator"></p>
 
         <hr>
-
-        <input type="file" id="fileInput" accept="image/*,video/*" class="file-input">
-        <button onclick="uploadFile()" class="btn upload-btn">Upload Media</button>
+        <div id="dragDropZone" class="drag-drop-zone">
+            <div class="drag-drop-content">
+                <div class="drag-drop-text">Drop Media Here<br><small>(Images or Videos only)</small></div>
+            </div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*,video/*" class="file-input" multiple>
+        <button onclick="uploadFiles()" class="btn upload-btn">Upload Media</button>
         <button id="clearDisplayBtn" onclick="clearDisplay()" class="btn">Clear Display</button>
 
         <!-- Video Controls for Remote Playback -->

@@ -10,10 +10,13 @@
     <script>
         var socket = io();
         var userLoggedIn = false;
+        var currentSlideIndex = 0;
+        var slideshowTimeout;
+        var slides = [];
+        var isVideoPlaying = false;
 
         document.addEventListener("DOMContentLoaded", function () {
             showWaitingMessage();
-            checkLoginStatus();
         });
 
         socket.on("connect", function () {
@@ -23,33 +26,31 @@
 
         socket.on("disconnect", function () {
             console.log("Disconnected. Attempting to reconnect...");
+            clearSlideshow();
             setTimeout(() => {
                 socket.connect();
             }, 3000);
         });
 
         socket.on("video_control", function (data) {
-            var video = document.querySelector("video");
-
-            if (!video) {
-                return;
-            }
+            var activeVideo = document.querySelector('.slide.active video, video.media-content');
+            if (!activeVideo) return;
 
             switch (data.action) {
                 case "play":
-                    video.play().catch(err => {
+                    activeVideo.play().catch(err => {
                         console.log("Autoplay blocked.");
                         socket.emit("autoplay_blocked");
                     });
                     break;
                 case "pause":
-                    video.pause();
+                    activeVideo.pause();
                     break;
                 case "mute":
-                    video.muted = true;
+                    activeVideo.muted = true;
                     break;
                 case "unmute":
-                    video.muted = false;
+                    activeVideo.muted = false;
                     break;
             }
         });
@@ -77,19 +78,20 @@
 
         socket.on("user_logged_out", function () {
             userLoggedIn = false;
+            clearSlideshow();
             showWaitingMessage();
         });
 
         socket.on("update_content", function (data) {
             console.log("Content update received:", data);
             userLoggedIn = true;
+            clearSlideshow();
+
             var contentBox = document.getElementById("content");
-            if (contentBox.children.length > 0) {
-                contentBox.firstChild.classList.add("fade-out");
-                contentBox.firstChild.addEventListener("animationend", function () {
-                    contentBox.innerHTML = "";
-                    appendNewContent(data);
-                });
+            contentBox.innerHTML = "";
+
+            if (data.type === "multiple_files") {
+                createSlideshow(data.files);
             } else {
                 appendNewContent(data);
             }
@@ -97,6 +99,7 @@
 
         socket.on("clear_display", function () {
             console.log("Clear display event received");
+            clearSlideshow();
             if (!userLoggedIn) {
                 showWaitingMessage();
             } else {
@@ -104,8 +107,89 @@
             }
         });
 
+        function createSlideshow(files) {
+            const contentBox = document.getElementById("content");
+            contentBox.innerHTML = '';
+
+            const slideshowContainer = document.createElement('div');
+            slideshowContainer.className = 'slideshow-container';
+            contentBox.appendChild(slideshowContainer);
+
+            // Create slides
+            slides = files.map((file, index) => {
+                const slide = document.createElement('div');
+                slide.className = `slide ${index === 0 ? 'active' : ''}`;
+
+                const mediaElement = file.type === 'image'
+                    ? document.createElement('img')
+                    : document.createElement('video');
+
+                mediaElement.src = file.url;
+                mediaElement.className = 'media-content';
+                mediaElement.playsInline = true;
+
+                if (file.type === 'video') {
+                    mediaElement.muted = false; // Try with sound first
+                    mediaElement.addEventListener('ended', showNextSlide);
+                    // Removed the immediate play() attempt
+                }
+
+                slide.appendChild(mediaElement);
+                slideshowContainer.appendChild(slide);
+                return {
+                    element: slide,
+                    type: file.type,
+                    media: mediaElement
+                };
+            });
+
+            showCurrentSlide();
+        }
+
+        function showCurrentSlide() {
+            slides.forEach(slide => {
+                slide.element.classList.remove('active');
+                if (slide.media.pause) {
+                    slide.media.pause();
+                    slide.media.currentTime = 0;
+                }
+            });
+
+            var currentSlide = slides[currentSlideIndex];
+            currentSlide.element.classList.add('active');
+
+            if (currentSlide.type === 'image') {
+                slideshowTimeout = setTimeout(showNextSlide, 5000);
+            } else if (currentSlide.type === 'video') {
+                currentSlide.media.play().then(() => {
+                    console.log("Video playing with sound");
+                }).catch(error => {
+                    console.log("Autoplay with sound blocked");
+                    // Fallback to muted playback
+                    currentSlide.media.muted = true;
+                    currentSlide.media.play().catch(e => {
+                        socket.emit("autoplay_blocked");
+                    });
+                });
+            }
+        }
+
+        function showNextSlide() {
+            if (isVideoPlaying) return;
+
+            clearTimeout(slideshowTimeout);
+            currentSlideIndex = (currentSlideIndex + 1) % slides.length;
+            showCurrentSlide();
+        }
+
+        function clearSlideshow() {
+            clearTimeout(slideshowTimeout);
+            isVideoPlaying = false;
+            slides = [];
+            currentSlideIndex = 0;
+        }
+
         function appendNewContent(data) {
-            console.log("Appending new content of type:", data.type);
             var contentBox = document.getElementById("content");
             var newContent = null;
 
@@ -131,22 +215,24 @@
                 video.classList.add("media-content");
                 video.autoplay = true;
                 video.loop = true;
-                video.controls = true;
-                video.muted = false; // Ensure sound is on
+                video.muted = false;
+                video.controls = false;
 
-                video.addEventListener("loadeddata", () => {
-                    let playPromise = video.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(error => {
-                            console.log("Autoplay blocked.");
-                            socket.emit("autoplay_blocked");
-                        });
-                    }
+                video.addEventListener('play', function () {
+                    isVideoPlaying = true;
                 });
 
-                video.addEventListener("click", () => {
-                    video.muted = false;
-                    video.play();
+                video.addEventListener('ended', function () {
+                    isVideoPlaying = false;
+                });
+
+                video.addEventListener('pause', function () {
+                    isVideoPlaying = false;
+                });
+
+                video.play().catch(error => {
+                    console.log("Single video autoplay blocked");
+                    socket.emit("autoplay_blocked");
                 });
 
                 newContent = video;

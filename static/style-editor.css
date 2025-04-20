@@ -135,3 +135,47 @@ h1 {
     gap: 10px;
     margin-top: 10px;
 }
+
+/* Drag and Drop Zone Styling */
+.drag-drop-zone {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 123, 255, 0.1);
+    border: 4px dashed #000000;
+    border-radius: 12px;
+    margin: 20px;
+    z-index: 1000;
+    pointer-events: none; /* Allows clicks to pass through when not active */
+}
+
+.drag-drop-zone.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+.drag-drop-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.drag-drop-text {
+    color: #007bff;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.drag-drop-text small {
+    display: block;
+    margin-top: 10px;
+    color: #666;
+    font-size: 16px;
+}

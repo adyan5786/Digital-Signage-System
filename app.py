@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, s
 from flask_socketio import SocketIO, emit, join_room
 from werkzeug.utils import secure_filename
 import logging
+import time
 
 app = Flask(__name__)
 
@@ -157,30 +158,62 @@ def handle_autoplay_blocked():
 
 @app.route("/upload", methods=["POST"])
 def upload():
-    if "file" not in request.files:
-        logging.warning("No file uploaded")
-        return "No file uploaded", 400
+    clear_uploads_on_login()
 
-    file = request.files["file"]
-    if file.filename == "":
-        logging.warning("No file selected for upload")
-        return "No selected file", 400
+    if "files[]" not in request.files:
+        logging.warning("No files uploaded")
+        return "No files uploaded", 400
 
-    if not allowed_file(file.filename):
-        logging.warning(f"Invalid file type attempted: {file.filename}")
-        return "Invalid file type", 400
+    files = request.files.getlist("files[]")
+    uploaded_files = []
 
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-    file.save(filepath)
+    for file in files:
+        if file.filename == "":
+            continue
+        if not allowed_file(file.filename):
+            continue
 
-    file_url = f"/uploads/{filename}"
-    file_type = "image" if file.content_type.startswith("image") else "video"
-    logging.info(f"File uploaded: {filename}, Type: {file_type}")
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        file.save(filepath)
 
-    socketio.emit("update_content", {"type": file_type, "file_url": file_url}, room="page2_users")
+        file_url = f"/uploads/{filename}"
+        file_type = "image" if file.content_type.startswith("image") else "video"
+        uploaded_files.append({
+            "type": file_type,
+            "url": file_url,
+            "content_type": file.content_type
+        })
 
-    return "File uploaded successfully", 200
+    if not uploaded_files:
+        return "No valid files uploaded", 400
+
+    # If multiple files uploaded, send them all as a batch
+    if len(uploaded_files) > 1:
+        socketio.emit("update_content", {
+            "type": "multiple_files",
+            "files": uploaded_files
+        }, room="page2_users")
+    else:
+        # Single file - send as normal
+        socketio.emit("update_content", {
+            "type": uploaded_files[0]["type"],
+            "file_url": uploaded_files[0]["url"]
+        }, room="page2_users")
+
+    return {"uploaded_files": [f['url'] for f in uploaded_files]}, 200
+
+@app.route("/get_uploaded_files", methods=["GET"])
+def get_uploaded_files():
+    """Fetch all files in the UPLOAD_FOLDER."""
+    try:
+        files = os.listdir(app.config["UPLOAD_FOLDER"])
+        files = [file for file in files if os.path.isfile(os.path.join(app.config["UPLOAD_FOLDER"], file))]
+        files_urls = [f"/uploads/{file}" for file in files]
+        return {"files": files_urls}, 200
+    except Exception as e:
+        logging.error(f"Error fetching files: {e}")
+        return {"error": "Could not retrieve files"}, 500
 
 if __name__ == "__main__":
     socketio.run(app, debug=True)
