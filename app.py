@@ -94,59 +94,6 @@ def uploaded_file(filename):
     """Serve uploaded files"""
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
-# SocketIO event handlers
-@socketio.on("connect")
-def on_connect():
-    """Handle new socket connections and room joining"""
-    referer = request.headers.get("Referer", "")
-    logging.info(f"Socket connected. Referer: {referer}")
-    if "other" in referer:
-        join_room("page2_users")  # Display page clients
-        is_logged_in = any(logged_in_users.values())
-        emit("check_login_status", {"logged_in": is_logged_in})
-    else:
-        join_room("page1_users")  # Editor page clients
-
-@socketio.on("send_text")
-def handle_text(data):
-    """Broadcast text updates to display page"""
-    socketio.emit(
-        "update_content", 
-        {
-            "type": "text", 
-            "message": data["message"], 
-            "align": data.get("align", "left"),
-            "animation": data.get("animation", "fade")
-        }, 
-        room="page2_users"
-    )
-    
-@socketio.on("clear_display")
-def handle_clear_display():
-    """Clear content on display page"""
-    socketio.emit("clear_display", {}, room="page2_users")
-
-@socketio.on("check_login_status")
-def check_login_status(data=None):
-    """Respond with current login status"""
-    is_logged_in = any(logged_in_users.values())
-    emit("check_login_status", {"logged_in": is_logged_in}, to=request.sid)  
-
-@socketio.on("disconnect")
-def handle_disconnect():
-    """Handle socket disconnection"""
-    pass
-
-@socketio.on("video_control")
-def handle_video_control(data):
-    """Control video playback on display page"""
-    socketio.emit("video_control", data, room="page2_users")
-
-@socketio.on("autoplay_blocked")
-def handle_autoplay_blocked():
-    """Notify editor when autoplay is blocked"""
-    socketio.emit("autoplay_blocked", room="page1_users")
-
 @app.route("/upload", methods=["POST"])
 def upload():
     """Handle file uploads and broadcast to display page"""
@@ -205,6 +152,59 @@ def get_uploaded_files():
     except Exception as e:
         logging.error(f"Error fetching files: {e}")
         return {"error": "Could not retrieve files"}, 500
+
+# SocketIO event handlers
+@socketio.on("connect")
+def on_connect():
+    """Handle new socket connections and room joining"""
+    referer = request.headers.get("Referer", "")
+    logging.info(f"Socket connected. Referer: {referer}")
+    if "other" in referer:
+        join_room("page2_users")  # Display page clients
+        is_logged_in = any(logged_in_users.values())
+        emit("check_login_status", {"logged_in": is_logged_in})
+    else:
+        join_room("page1_users")  # Editor page clients
+
+@socketio.on("send_text")
+def handle_text(data):
+    """Broadcast text updates to display page"""
+    socketio.emit(
+        "update_content", 
+        {
+            "type": "text", 
+            "message": data["message"], 
+            "align": data.get("align", "left"),
+            "animation": data.get("animation", "fade")
+        }, 
+        room="page2_users"
+    )
+    
+@socketio.on("clear_display")
+def handle_clear_display():
+    """Clear content on display page"""
+    socketio.emit("clear_display", {}, room="page2_users")
+
+@socketio.on("check_login_status")
+def check_login_status(data=None):
+    """Respond with current login status"""
+    is_logged_in = any(logged_in_users.values())
+    emit("check_login_status", {"logged_in": is_logged_in}, to=request.sid)  
+
+@socketio.on("disconnect")
+def handle_disconnect():
+    """Handle socket disconnection"""
+    pass
+
+@socketio.on("video_control")
+def handle_video_control(data):
+    """Control video playback on display page"""
+    socketio.emit("video_control", data, room="page2_users")
+
+@socketio.on("autoplay_blocked")
+def handle_autoplay_blocked():
+    """Notify editor when autoplay is blocked"""
+    socketio.emit("autoplay_blocked", room="page1_users")
 
 if __name__ == "__main__":
     socketio.run(app, debug=True)

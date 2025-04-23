@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <link rel="stylesheet" href="/static/style-tv.css">
     <script>
-        // Global variables for slideshow and connection state
+        // Global variables
         var socket = io();
         var userLoggedIn = false;
         var currentSlideIndex = 0;
@@ -16,12 +16,12 @@
         var slides = [];
         var isVideoPlaying = false;
 
-        // Show waiting message when page loads
+        // Initialization
         document.addEventListener("DOMContentLoaded", function () {
             showWaitingMessage();
         });
 
-        // Socket.io connection handlers
+        // Socket.io Event Handlers
         socket.on("connect", function () {
             console.log("Connected to WebSocket");
             checkLoginStatus();
@@ -58,17 +58,6 @@
                     break;
             }
         });
-
-        // Display waiting message when no content is available
-        function showWaitingMessage() {
-            var contentBox = document.getElementById("content");
-            contentBox.innerHTML = '<div class="waiting-message-container"><p class="waiting-message">Waiting for Connection...</p></div>';
-        }
-
-        // Check if user is logged in on connection
-        function checkLoginStatus() {
-            socket.emit("check_login_status");
-        }
 
         // Handle login status updates
         socket.on("check_login_status", (response) => {
@@ -117,6 +106,17 @@
             }
         });
 
+        // Display waiting message when no content is available
+        function showWaitingMessage() {
+            var contentBox = document.getElementById("content");
+            contentBox.innerHTML = '<div class="waiting-message-container"><p class="waiting-message">Waiting for Connection...</p></div>';
+        }
+
+        // Check if user is logged in on connection
+        function checkLoginStatus() {
+            socket.emit("check_login_status");
+        }
+
         // Create slideshow from multiple files
         function createSlideshow(files) {
             const contentBox = document.getElementById("content");
@@ -159,7 +159,6 @@
 
         // Display current slide in slideshow
         function showCurrentSlide() {
-            // Hide all slides and reset media
             slides.forEach(slide => {
                 slide.element.classList.remove('active');
                 if (slide.media.pause) {
