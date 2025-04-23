@@ -1,4 +1,3 @@
-/* General Page Styling */
 body {
     font-family: Arial, sans-serif;
     background-color: #f5f5f5;
@@ -6,25 +5,27 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
     flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
-/* Logout Button Container */
+/* Positioned in top-right corner */
 .logout-container {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 10px;
+    right: 10px;
 }
 
 .logout-button {
     background-color: #ff4d4d;
     color: white;
-    padding: 10px 15px;
+    padding: 8px 12px;
     text-decoration: none;
-    font-size: 16px;
-    border-radius: 5px;
+    font-size: 14px;
+    border-radius: 4px;
     transition: background 1.0s;
 }
 
@@ -32,124 +33,110 @@ body {
     background-color: #cc0000;
 }
 
-/* Centered Container */
+/* Main content container */
 .container {
     text-align: center;
     background: white;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-    max-width: 600px;
-    width: 90%;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    width: 100%;
+    margin: 20px 0;
 }
 
-/* Heading */
 h1 {
-    font-size: 26px;
+    font-size: 22px;
     color: #007bff;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
 }
 
-/* Quill Editor Styling */
-.text-area {
+/* Form elements styling */
+.text-area, .input, .file-input, .file-input-container {
     width: 100%;
-    height: 150px;
-    padding: 12px;
-    border-radius: 5px;
+    padding: 8px;
+    font-size: 14px;
+    border-radius: 4px;
     border: 1px solid #007bff;
-    font-size: 16px;
-    background: #fff;
-    color: #333;
-    box-sizing: border-box;
-    outline: none;
-}
-
-/* Standard Border for Inputs & File Upload */
-.input, .file-input, .file-input-container {
-    width: 100%;
-    padding: 10px;
-    font-size: 16px;
-    border-radius: 6px;
-    border: 1px solid #007bff; /* Matches editor */
     background-color: white;
     color: #333;
-    box-sizing: border-box; /* Prevents overflow issues */
+    box-sizing: border-box;
 }
 
-/* Fix File Input Container */
-.file-input-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: white;
+.text-area {
+    height: 120px;
 }
 
-/* Standard Button Styling */
 .btn {
     background-color: #007bff;
     color: white;
     border: 1px solid #007bff;
-    padding: 12px;
-    font-size: 16px;
-    border-radius: 6px;
+    padding: 8px;
+    font-size: 14px;
+    border-radius: 4px;
     cursor: pointer;
     transition: 0.3s;
     width: 100%;
-    margin-top: 10px;
-    text-align: center;
+    margin-top: 8px;
 }
 
 .btn:hover {
     background-color: #0090e0;
 }
 
-/* Selected Button Style */
 .selectable-button.selected {
     background-color: #000000;
     border-color: #007bff;
 }
 
 .selectable-button {
-    margin: 0 5px;
+    margin: 0 4px;
     width: auto;
+    padding: 8px 12px;
 }
 
-/* Status Indicator */
+/* Status and character count */
 .status-indicator {
-    font-size: 14px;
+    font-size: 12px;
     color: #007bff;
-    margin-top: 10px;
-    height: 18px;
-    text-align: center;
+    margin-top: 8px;
+    height: 16px;
     font-weight: bold;
 }
 
 .char-count {
     color: #aaaaaa;
-    font-size: 0.9em;
+    font-size: 0.8em;
+    margin: 5px 0;
 }
 
+/* Video controls */
 #videoControls {
-    display: none;  /* Initially hidden */
+    display: none;
     justify-content: center;
-    gap: 10px;
-    margin-top: 10px;
+    gap: 8px;
+    margin-top: 8px;
 }
 
-/* Drag and Drop Zone Styling */
+#videoControls .btn {
+    width: auto;
+    padding: 6px 10px;
+}
+
+/* Drag and drop overlay */
 .drag-drop-zone {
-    display: none; /* Hidden by default */
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     background-color: rgba(0, 123, 255, 0.1);
-    border: 4px dashed #000000;
-    border-radius: 12px;
-    margin: 20px;
+    border: 3px dashed #000000;
+    border-radius: 8px;
+    margin: 15px;
     z-index: 1000;
-    pointer-events: none; /* Allows clicks to pass through when not active */
+    pointer-events: none;
 }
 
 .drag-drop-zone.active {
@@ -161,21 +148,20 @@ h1 {
 
 .drag-drop-content {
     background-color: white;
-    padding: 30px;
-    border-radius: 8px;
+    padding: 20px;
+    border-radius: 6px;
     text-align: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .drag-drop-text {
     color: #007bff;
-    font-size: 24px;
+    font-size: 18px;
     font-weight: bold;
 }
 
-.drag-drop-text small {
-    display: block;
-    margin-top: 10px;
-    color: #666;
-    font-size: 16px;
+hr {
+    margin: 12px 0;
+    border: 0;
+    border-top: 1px solid #eee;
 }

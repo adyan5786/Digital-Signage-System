@@ -8,6 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <link rel="stylesheet" href="/static/style-tv.css">
     <script>
+        // Global variables for slideshow and connection state
         var socket = io();
         var userLoggedIn = false;
         var currentSlideIndex = 0;
@@ -15,10 +16,12 @@
         var slides = [];
         var isVideoPlaying = false;
 
+        // Show waiting message when page loads
         document.addEventListener("DOMContentLoaded", function () {
             showWaitingMessage();
         });
 
+        // Socket.io connection handlers
         socket.on("connect", function () {
             console.log("Connected to WebSocket");
             checkLoginStatus();
@@ -32,6 +35,7 @@
             }, 3000);
         });
 
+        // Handle video control commands from server
         socket.on("video_control", function (data) {
             var activeVideo = document.querySelector('.slide.active video, video.media-content');
             if (!activeVideo) return;
@@ -55,15 +59,18 @@
             }
         });
 
+        // Display waiting message when no content is available
         function showWaitingMessage() {
             var contentBox = document.getElementById("content");
             contentBox.innerHTML = '<div class="waiting-message-container"><p class="waiting-message">Waiting for Connection...</p></div>';
         }
 
+        // Check if user is logged in on connection
         function checkLoginStatus() {
             socket.emit("check_login_status");
         }
 
+        // Handle login status updates
         socket.on("check_login_status", (response) => {
             if (response && response.logged_in) {
                 userLoggedIn = true;
@@ -82,6 +89,7 @@
             showWaitingMessage();
         });
 
+        // Main content update handler
         socket.on("update_content", function (data) {
             console.log("Content update received:", data);
             userLoggedIn = true;
@@ -90,6 +98,7 @@
             var contentBox = document.getElementById("content");
             contentBox.innerHTML = "";
 
+            // Handle multiple files as slideshow or single content
             if (data.type === "multiple_files") {
                 createSlideshow(data.files);
             } else {
@@ -97,6 +106,7 @@
             }
         });
 
+        // Clear display when requested
         socket.on("clear_display", function () {
             console.log("Clear display event received");
             clearSlideshow();
@@ -107,6 +117,7 @@
             }
         });
 
+        // Create slideshow from multiple files
         function createSlideshow(files) {
             const contentBox = document.getElementById("content");
             contentBox.innerHTML = '';
@@ -115,11 +126,12 @@
             slideshowContainer.className = 'slideshow-container';
             contentBox.appendChild(slideshowContainer);
 
-            // Create slides
+            // Create slides for each file
             slides = files.map((file, index) => {
                 const slide = document.createElement('div');
                 slide.className = `slide ${index === 0 ? 'active' : ''}`;
 
+                // Create appropriate media element based on file type
                 const mediaElement = file.type === 'image'
                     ? document.createElement('img')
                     : document.createElement('video');
@@ -129,9 +141,8 @@
                 mediaElement.playsInline = true;
 
                 if (file.type === 'video') {
-                    mediaElement.muted = false; // Try with sound first
+                    mediaElement.muted = false;
                     mediaElement.addEventListener('ended', showNextSlide);
-                    // Removed the immediate play() attempt
                 }
 
                 slide.appendChild(mediaElement);
@@ -146,7 +157,9 @@
             showCurrentSlide();
         }
 
+        // Display current slide in slideshow
         function showCurrentSlide() {
+            // Hide all slides and reset media
             slides.forEach(slide => {
                 slide.element.classList.remove('active');
                 if (slide.media.pause) {
@@ -155,9 +168,11 @@
                 }
             });
 
+            // Show current slide
             var currentSlide = slides[currentSlideIndex];
             currentSlide.element.classList.add('active');
 
+            // Handle different media types
             if (currentSlide.type === 'image') {
                 slideshowTimeout = setTimeout(showNextSlide, 5000);
             } else if (currentSlide.type === 'video') {
@@ -165,7 +180,6 @@
                     console.log("Video playing with sound");
                 }).catch(error => {
                     console.log("Autoplay with sound blocked");
-                    // Fallback to muted playback
                     currentSlide.media.muted = true;
                     currentSlide.media.play().catch(e => {
                         socket.emit("autoplay_blocked");
@@ -174,6 +188,7 @@
             }
         }
 
+        // Advance to next slide in slideshow
         function showNextSlide() {
             if (isVideoPlaying) return;
 
@@ -182,6 +197,7 @@
             showCurrentSlide();
         }
 
+        // Clean up slideshow resources
         function clearSlideshow() {
             clearTimeout(slideshowTimeout);
             isVideoPlaying = false;
@@ -189,10 +205,12 @@
             currentSlideIndex = 0;
         }
 
+        // Append single content element to display
         function appendNewContent(data) {
             var contentBox = document.getElementById("content");
             var newContent = null;
 
+            // Create appropriate content based on type
             if (data.type === "text") {
                 var messageElement = document.createElement("p");
                 messageElement.classList.add("formatted-text");
@@ -218,6 +236,7 @@
                 video.muted = false;
                 video.controls = false;
 
+                // Video state event handlers
                 video.addEventListener('play', function () {
                     isVideoPlaying = true;
                 });
@@ -238,6 +257,7 @@
                 newContent = video;
             }
 
+            // Add content with appropriate animation
             if (newContent) {
                 if (data.animation === "fade") {
                     newContent.classList.add("fade-in");
@@ -251,7 +271,7 @@
                         contentBox.appendChild(newContent);
                     }
                 } else if (data.animation === "scroll") {
-                    contentBox.innerHTML = ""; // Clear previous content
+                    contentBox.innerHTML = "";
                     contentBox.appendChild(newContent);
                 } else {
                     newContent.classList.add("fade-in");
@@ -260,6 +280,7 @@
             }
         }
 
+        // Set font size based on text length
         function setFontSize(element) {
             var textLength = element.innerText.length;
             if (textLength <= 35) {
@@ -271,11 +292,13 @@
             }
         }
 
+        // Disable right-click context menu
         document.addEventListener("contextmenu", event => event.preventDefault());
     </script>
 </head>
 
 <body>
+    <!-- Main content container -->
     <div class="content-box" id="content"></div>
 </body>
 

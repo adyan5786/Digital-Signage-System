@@ -1,4 +1,4 @@
-/* General Styling for Login Page */
+/* Main page layout */
 body {
     font-family: Arial, sans-serif;
     background-color: #f5f5f5;
@@ -10,9 +10,9 @@ body {
     margin: 0;
 }
 
-/* Rectangular login box */
+/* Login container styling */
 .login-container {
-    width: 350px; /* Ensures a compact size */
+    width: 350px;
     padding: 25px;
     text-align: center;
     background: white;
@@ -25,14 +25,14 @@ body {
     box-sizing: border-box;
 }
 
-/* Heading */
+/* Login heading */
 h1 {
     font-size: 24px;
     margin-bottom: 15px;
-    color: #007bff; /* Matches theme */
+    color: #007bff;
 }
 
-/* Input fields */
+/* Form input fields */
 .input {
     width: 90%;
     padding: 10px;
@@ -42,7 +42,7 @@ h1 {
     margin-bottom: 12px;
 }
 
-/* Login button */
+/* Submit button */
 .btn {
     width: 90%;
     padding: 10px;
@@ -58,4 +58,18 @@ h1 {
 
 .btn:hover {
     background-color: #0090e0;
+}
+
+/* Error message styling */
+.error-message {
+    display: none;
+    color: #dc3545;
+    font-size: 14px;
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    width: 90%;
+    box-sizing: border-box;
 }

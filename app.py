@@ -1,36 +1,31 @@
 import os
 import secrets
+import logging
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
 from werkzeug.utils import secure_filename
-import logging
-import time
 
 app = Flask(__name__)
-
-# Secure random secret key for session management
-app.secret_key = secrets.token_hex(32)
-
-# SocketIO setup with CORS support
+app.secret_key = secrets.token_hex(32)  # Secure secret key for session management
 socketio = SocketIO(app, ping_timeout=120, ping_interval=25, cors_allowed_origins="*")
 
+# Configuration for file uploads and session security
 UPLOAD_FOLDER = "static/uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-
-# Secure session settings
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
-# Ensure upload directory exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+logged_in_users = {}  # Tracks active user sessions
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "mp4", "mov", "avi", "mkv", "quicktime"}
 
-# Track logged-in users (Key: user_id, Value: boolean)
-logged_in_users = {}
+def allowed_file(filename):
+    """Check if file extension is allowed"""
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Clear uploads on login
 def clear_uploads_on_login():
-    """Delete all files in uploads folder when called."""
+    """Clear uploads directory when a new user logs in"""
     for filename in os.listdir(UPLOAD_FOLDER):
         file_path = os.path.join(UPLOAD_FOLDER, filename)
         try:
@@ -41,123 +36,120 @@ def clear_uploads_on_login():
             print(f"Error deleting {file_path}: {e}")
             logging.error(f"Error deleting {file_path}: {e}")
 
-# Allowed file extensions
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "mp4", "mov", "avi", "mkv", "quicktime"}
-
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# Prevent caching of secure pages
 @app.after_request
 def add_header(response):
+    """Prevent caching of responses"""
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
     return response
 
-# Login Page
 @app.route("/", methods=["GET", "POST"])
 def login():
+    """Handle user login with hardcoded credentials"""
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
         logging.info(f"Login attempted with username: {username}")
 
-        if username == "admin" and password == "password":
-            clear_uploads_on_login()  # <- Clear uploads on successful login
+        if username == "RizviSignage" and password == "CodeLike":
+            clear_uploads_on_login()
             session["user"] = username
             logged_in_users[username] = True
             logging.info(f"User logged in: {username}")
             socketio.emit("user_logged_in", {}, room="page2_users")
             return redirect(url_for("editor"))
+        
+        return redirect(url_for("login", error=True))
 
     return render_template("login.html")
 
-# Logout
 @app.route("/logout")
 def logout():
+    """Handle user logout and clear session"""
     username = session.get("user")
     if username:
-        logged_in_users.pop(username, None)  # Remove from tracking
+        logged_in_users.pop(username, None)
         logging.info(f"User logged out: {username}")
 
-    session.clear()  # Clears session data
-
-    # Notify all TV displays that the user logged out
+    session.clear()
     socketio.emit("user_logged_out", {}, room="page2_users")
-
     return redirect(url_for("login"))
 
-# Editor Page (Protected)
 @app.route("/editor")
 def editor():
+    """Editor page - requires authentication"""
     if "user" not in session or session.get("user") is None:
         return redirect(url_for("login"))  
-
-    # Notify all connected display screens that a user is logged in
+    
     socketio.emit("user_logged_in", {}, room="page2_users")
-
     return render_template("page1.html")
 
-# TV Display Page
 @app.route("/other")
 def page2():
+    """Display page - no authentication required"""
     return render_template("page2.html")
 
-# File Uploads
 @app.route("/uploads/<filename>")
 def uploaded_file(filename):
+    """Serve uploaded files"""
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
+# SocketIO event handlers
 @socketio.on("connect")
 def on_connect():
+    """Handle new socket connections and room joining"""
     referer = request.headers.get("Referer", "")
     logging.info(f"Socket connected. Referer: {referer}")
     if "other" in referer:
-        join_room("page2_users")
-
-        # Send login status when a new display connects
-        is_logged_in = any(logged_in_users.values())  # If any user is logged in
+        join_room("page2_users")  # Display page clients
+        is_logged_in = any(logged_in_users.values())
         emit("check_login_status", {"logged_in": is_logged_in})
     else:
-        join_room("page1_users")
+        join_room("page1_users")  # Editor page clients
 
 @socketio.on("send_text")
 def handle_text(data):
+    """Broadcast text updates to display page"""
     socketio.emit(
         "update_content", 
         {
             "type": "text", 
             "message": data["message"], 
             "align": data.get("align", "left"),
-            "animation": data.get("animation", "fade")  # Include animation type
+            "animation": data.get("animation", "fade")
         }, 
         room="page2_users"
     )
     
 @socketio.on("clear_display")
 def handle_clear_display():
+    """Clear content on display page"""
     socketio.emit("clear_display", {}, room="page2_users")
 
 @socketio.on("check_login_status")
 def check_login_status(data=None):
-    """Check if any user is logged in when a new tab connects."""
-    is_logged_in = any(logged_in_users.values())  # Check if any user is logged in
+    """Respond with current login status"""
+    is_logged_in = any(logged_in_users.values())
     emit("check_login_status", {"logged_in": is_logged_in}, to=request.sid)  
 
 @socketio.on("disconnect")
 def handle_disconnect():
+    """Handle socket disconnection"""
     pass
 
 @socketio.on("video_control")
 def handle_video_control(data):
+    """Control video playback on display page"""
     socketio.emit("video_control", data, room="page2_users")
 
 @socketio.on("autoplay_blocked")
 def handle_autoplay_blocked():
+    """Notify editor when autoplay is blocked"""
     socketio.emit("autoplay_blocked", room="page1_users")
 
 @app.route("/upload", methods=["POST"])
 def upload():
+    """Handle file uploads and broadcast to display page"""
     clear_uploads_on_login()
 
     if "files[]" not in request.files:
@@ -188,14 +180,13 @@ def upload():
     if not uploaded_files:
         return "No valid files uploaded", 400
 
-    # If multiple files uploaded, send them all as a batch
+    # Broadcast to display clients
     if len(uploaded_files) > 1:
         socketio.emit("update_content", {
             "type": "multiple_files",
             "files": uploaded_files
         }, room="page2_users")
     else:
-        # Single file - send as normal
         socketio.emit("update_content", {
             "type": uploaded_files[0]["type"],
             "file_url": uploaded_files[0]["url"]
@@ -205,7 +196,7 @@ def upload():
 
 @app.route("/get_uploaded_files", methods=["GET"])
 def get_uploaded_files():
-    """Fetch all files in the UPLOAD_FOLDER."""
+    """Return list of uploaded files"""
     try:
         files = os.listdir(app.config["UPLOAD_FOLDER"])
         files = [file for file in files if os.path.isfile(os.path.join(app.config["UPLOAD_FOLDER"], file))]
