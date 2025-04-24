@@ -4,11 +4,9 @@ import logging
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
 from werkzeug.utils import secure_filename
-import eventlet
 
-eventlet.monkey_patch()
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32)) # Secure secret key for session management
+app.secret_key = secrets.token_hex(32)  # Secure secret key for session management
 socketio = SocketIO(app, ping_timeout=120, ping_interval=25, cors_allowed_origins="*")
 
 # Configuration for file uploads and session security
@@ -209,9 +207,4 @@ def handle_autoplay_blocked():
     socketio.emit("autoplay_blocked", room="page1_users")
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    socketio.run(app, 
-                host='0.0.0.0', 
-                port=port,
-                debug=False,
-                allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=True)
