@@ -16,15 +16,17 @@
 ### Deployment Steps
 Please follow the below steps to run this project.
 <br>
-Step 1: Run the server (app.py).
+Step 1: Open terminal and run the following command: ``` pip install -r requirements.txt ```
 <br>
-Step 2: Open the link generataed when running the server.
+Step 2: Run the server (app.py).
+<br>
+Step 3: 'ctrl + click' on http://127.0.0.1:5000.
 <br>
 Step 3: The main link is the Login page which redirects to Editor page.
 <br>
-Step 4: The main link is also used to open the TV page by typing "/other" at the end of the link.
+Step 4: The main link is also used to open the Display page by typing "/other" at the end of the link.
 <br>
-Step 5: Setup the TV page on any display device and the Editor page on any device you'd like you to use as editor (preferably a laptop).
+Step 5: Setup the Display page on a broadcasting display device and the Editor page on your laptop (preferred) or phone.
 
 ### Subject Details
 - Class : SE (COMP) Div A - 2024-2025
