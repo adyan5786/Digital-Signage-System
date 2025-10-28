@@ -34,8 +34,9 @@ Step 5: Setup the TV page on any display device and the Editor page on any devic
 2. [Flask](https://flask.palletsprojects.com/en/stable/)
 3. [Flask-Socketio](https://flask-socketio.readthedocs.io/en/latest/)
 4. [Werkzeug](https://werkzeug.palletsprojects.com/en/stable/)
-5. [JS Socketio](https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js)
-6. [Quill.js](https://cdn.quilljs.com/1.3.6/quill.js)
+5. [JavaScript (Vanilla)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+6. [JS Socketio](https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js)
+7. [Quill.js](https://cdn.quilljs.com/1.3.6/quill.js)
 
 ### References
 - [https://github.com/](https://github.com/)
