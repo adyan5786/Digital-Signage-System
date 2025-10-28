@@ -1,6 +1,8 @@
 # Real-Time Digital Signage System
 
 > **Abstract** : This project aims to develop a Real-Time Digital Signage System that enables users to upload and display images, text, or videos on a TV screen instantly. The system provides a user-friendly interface for managing content, ensuring seamless updates without manual intervention. Designed for applications such as advertisements, announcements, and information displays, this system is ideal for malls, offices, educational institutions, and public spaces. The TV screen automatically updates whenever new content is added, making it a dynamic and efficient solution for real-time content management.
+> <br><br> 
+> The Digital Signage System is a real-time, two-page signage solution developed primarily using HTML, CSS, and Vanilla JavaScript, with supporting Python components. Designed for dynamic public information display, the system enables administrators to update and broadcast content instantly across screens. Its modular architecture allows seamless integration of multimedia and interactive elements, ensuring a visually engaging and responsive user experience. The project emphasizes simplicity and reliability, making it suitable for a wide range of environments such as retail, education, and transportation hubs. By leveraging web technologies, the signage system achieves cross-platform compatibility and ease of deployment, supporting efficient communication and timely updates.
 
 ### Project Members
 1. CHOUDHRY ABDUL REHMAN MOHD ASIM  [ Team Leader ] 
