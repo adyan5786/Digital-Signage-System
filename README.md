@@ -46,7 +46,7 @@ Step 3: The main link is the Login page which redirects to the Editor page.
 <br>
 Step 4: The main link is also used to open the Display page by inputting "/other" at the end of the link, or by replacing "/editor" with "/other" if logged in to the Editor page.
 <br>
-Step 5: Setup the Display page on a broadcasting display device and the Editor page on your laptop (preferred) or phone.
+Step 5: Setup the Display page on a broadcasting display device (the page is best suited for 16:9 ratio screens) and the Editor page on your laptop (preferred) or phone.
 <br><br>
 <b>Note:</b> The Login credentials are hardcoded, with the Username as "RizviSignage" and the Password as "CodeLike".
 
