@@ -5,12 +5,14 @@ from flask import Flask, render_template, request, redirect, url_for, session, s
 from flask_socketio import SocketIO, emit, join_room
 from werkzeug.utils import secure_filename
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))    # ensures all relative paths use the repo folder
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
+
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)  # Secure secret key for session management
 socketio = SocketIO(app, ping_timeout=120, ping_interval=25, cors_allowed_origins="*")
 
 # Configuration for file uploads and session security
-UPLOAD_FOLDER = "static/uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SECURE"] = True
