@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link rel="stylesheet" href="/static/style-login.css">
 </head>
+
 <body>
+    <!-- Login form -->
     <div class="login-container">
         <h1>Login</h1>
-        <!-- Error message that will be shown when login fails -->
         <div id="error-message" class="error-message" style="display: none;">
             Invalid username or password
         </div>
@@ -22,18 +24,14 @@
 
     <script>
         // Check for error parameter in URL when page loads
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const urlParams = new URLSearchParams(window.location.search);
             const hasError = urlParams.has('error');
-            
+
             if (hasError) {
                 const errorElement = document.getElementById('error-message');
                 errorElement.style.display = 'block';
-                
-                // Clean URL by removing the error parameter
                 window.history.replaceState({}, document.title, window.location.pathname);
-                
-                // Hide error message after 3 seconds
                 setTimeout(() => {
                     errorElement.style.display = 'none';
                 }, 3000);
@@ -41,4 +39,5 @@
         });
     </script>
 </body>
+
 </html>

@@ -52,7 +52,10 @@ h1 {
 }
 
 /* Form elements styling */
-.text-area, .input, .file-input, .file-input-container {
+.text-area,
+.input,
+.file-input,
+.file-input-container {
     width: 100%;
     padding: 8px;
     font-size: 14px;
