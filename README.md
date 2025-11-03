@@ -37,7 +37,7 @@ Modern browsers prevent videos from automatically playing with sound until you'v
 <p align="center">Display Page</p>
 
 ## Demo Video
-[Download or view demo video](Resources/Screenshots%20and%20Demo%20Video/Digital%20Signage%20System%20Demo%20Video.mp4)
+[Download to view the demo video](Resources/Screenshots%20and%20Demo%20Video/Digital%20Signage%20System%20Demo%20Video.mp4)
 
 ## Project Members
 1. CHOUDHRY ABDUL REHMAN MOHD ASIM  [ Team Leader ] 
