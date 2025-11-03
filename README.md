@@ -22,6 +22,23 @@
 <br> 
 Modern browsers prevent videos from automatically playing with sound until you've interacted with a page (such as clicking anywhere on the Display Page). To enable video playback with sound, please interact with the Display Page at least once.
 
+## Screenshots
+
+![Login Page](Resources/Screenshots%20and%20Demo%20Video/Login%20Page.png)
+
+<p align="center">Login Page</p><br>
+
+![Editor Page](Resources/Screenshots%20and%20Demo%20Video/Editor%20Page.png)
+
+<p align="center">Editor Page</p><br>
+
+![Display Page](Resources/Screenshots%20and%20Demo%20Video/Display%20Page.png)
+
+<p align="center">Display Page</p>
+
+## Demo Video
+[Download or view demo video](Resources/Screenshots%20and%20Demo%20Video/Digital%20Signage%20System%20Demo%20Video.mp4)
+
 ## Project Members
 1. CHOUDHRY ABDUL REHMAN MOHD ASIM  [ Team Leader ] 
 2. SADRIWALA MOHAMMED FIROZ 
