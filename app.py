@@ -82,7 +82,7 @@ def login():
         password = request.form["password"]
         logging.info(f"Login attempted with username: {username}")
 
-        if username == "RizviSignage" and password == "CodeLike":
+        if username == "CodeLike" and password == "password":
             clear_uploads_on_login()
             session["user"] = username
             logged_in_users[username] = True

@@ -18,7 +18,7 @@
 4. Supports multi file inputs, where images would be displayed in an endless looping slideshow of 5 seconds, while the entire video plays.
 5. Drag and Drop feature.
 
-<b>Note: Autoplay with Sound Blocked</b>
+<b>Note: Autoplay Blocked</b>
 <br> 
 Modern browsers prevent videos from automatically playing with sound until you've interacted with a page (such as clicking anywhere on the Display Page). To enable video playback with sound, please interact with the Display Page at least once.
 
@@ -48,7 +48,7 @@ Step 4: The main link is also used to open the Display page by inputting "/other
 <br>
 Step 5: Setup the Display page on a broadcasting display device (the page is best suited for 16:9 ratio screens) and the Editor page on your laptop (preferred) or phone.
 <br><br>
-<b>Note:</b> The Login credentials are hardcoded, with the Username as "RizviSignage" and the Password as "CodeLike".
+<b>Note:</b> The Login credentials are hardcoded, with the Username as "CodeLike" and the Password as "password".
 
 ## Subject Details
 - Class : SE (COMP) Div A - 2024-2025
